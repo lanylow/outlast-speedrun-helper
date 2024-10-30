@@ -1,6 +1,6 @@
 # Outlast Speedrun Helper [![License](https://img.shields.io/badge/License-GPL3.0-green.svg)](https://github.com/lanylow/outlast-speedrun-helper/blob/main/LICENSE) ![OS](https://img.shields.io/badge/OS-Windows-yellow.svg)
 
-Free and open-source tool for Outlast that lets you save up to four different positions and teleport back to them. It has the same funcionality as the original speedrun helper made by Instagibz.
+Free and open-source tool for Outlast and Outlast 2 that lets you save up to four different positions and teleport back to them. It has the same funcionality as the original speedrun helper made by Instagibz.
 
 ## FAQ
 
