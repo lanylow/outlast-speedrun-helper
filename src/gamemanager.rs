@@ -13,8 +13,8 @@ pub struct GameManager {
 impl GameManager {
   pub fn new(module: Module, data: Box<dyn GameData>) -> Self {
     GameManager {
-      module: module,
-      data: data
+      module,
+      data
     }
   }
 
@@ -23,20 +23,25 @@ impl GameManager {
     read::<T>(&self.module.process_handle, address, size_of::<T>(), &mut value).map_err(|_| { })?;
     Ok(value)
   }
+
+  fn read_ptr(&self, address: usize) -> Result<usize, ()> {
+    let value = if self.data.is_32_bit() {
+      self.read_type::<u32>(address)? as usize
+    }
+    else {
+      self.read_type::<u64>(address)? as usize
+    };
+
+    Ok(value)
+  }
   
   fn write_type<T>(&self, address: usize, value: &mut T) {
     let _ = write::<T>(&self.module.process_handle, address, value);
   }
-  
-  pub fn get_olpc_ptr(&mut self) -> Result<usize, ()> {
-    let ptr = self.module.find_pattern(self.data.get_olpc_pattern()).ok_or(())?;
-    let offset = self.read_type::<u32>(self.module.base_address + ptr + 3)? as usize;
-    Ok(ptr + offset + 7)
-  }
 
-  pub fn get_hero_pawn(&self, ptr: usize) -> Result<usize, ()> {
-    let olpc = self.read_type::<usize>(self.module.base_address + ptr)?;
-    let hero_pawn = self.read_type::<usize>(olpc + self.data.get_offsets().hero_pawn)?;
+  pub fn get_hero_pawn(&self) -> Result<usize, ()> {
+    let olpc = self.read_ptr(self.module.base_address + self.data.get_offsets().player_controller)?;
+    let hero_pawn = self.read_ptr(olpc + self.data.get_offsets().hero_pawn)?;
     Ok(hero_pawn)
   }
 

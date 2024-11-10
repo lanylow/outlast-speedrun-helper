@@ -4,5 +4,5 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-toy-arms = { git = "https://github.com/vxcall/toy-arms", features = [ "external" ] }
+toy-arms = { git = "https://github.com/lanylow/toy-arms", features = [ "external" ] }
 win-beep = "1.0.3"
