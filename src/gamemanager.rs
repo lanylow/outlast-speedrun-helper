@@ -1,7 +1,7 @@
 use std::mem::{size_of, zeroed};
 use toy_arms::external::{module::Module, read, write};
 
-use crate::gamedata::{GameData, Offsets};
+use crate::gamedata::*;
 
 pub type Vector = [u8; 12];
 
@@ -10,7 +10,8 @@ pub struct GameManager {
   is_32_bit: bool,
   offsets: Offsets,
   player_controller: usize,
-  hero_pawn: usize
+  hero_pawn: usize,
+  god_mode: bool
 }
 
 impl GameManager {
@@ -20,13 +21,17 @@ impl GameManager {
       is_32_bit: data.is_32_bit(),
       offsets: data.get_offsets(),
       player_controller: 0,
-      hero_pawn: 0
+      hero_pawn: 0,
+      god_mode: false
     }
   }
 
   pub fn update_data(&mut self) -> Result<(), ()> {
     self.player_controller = self.read_ptr(self.module.base_address + self.offsets.player_controller)?;
     self.hero_pawn = self.read_ptr(self.player_controller + self.offsets.hero_pawn)?;
+
+    self.write_bit_field(self.player_controller, &self.offsets.god_mode, self.god_mode);
+
     Ok(())
   }
 
@@ -40,7 +45,7 @@ impl GameManager {
   }
 
   pub fn teleport_to_debug_cam(&self) -> bool {
-    let debug_free_cam = self.read_type::<u32>(self.player_controller + self.offsets.debug_free_cam).unwrap() & self.offsets.debug_free_cam_bit as u32 > 0;
+    let debug_free_cam = self.read_bit_field(self.player_controller, &self.offsets.debug_free_cam).unwrap();
 
     if debug_free_cam {
       let mut debug_cam_pos = self.read_type::<Vector>(self.player_controller + self.offsets.debug_cam_pos).unwrap();
@@ -48,6 +53,11 @@ impl GameManager {
     }
 
     debug_free_cam
+  }
+
+  pub fn toggle_god_mode(&mut self) -> bool {
+    self.god_mode ^= true;
+    self.god_mode
   }
 
   fn read_type<T>(&self, address: usize) -> Result<T, ()> {
@@ -67,7 +77,25 @@ impl GameManager {
     Ok(value)
   }
 
+  fn read_bit_field(&self, base: usize, field: &BitField) -> Result<bool, ()> {
+    let value = self.read_type::<u32>(base + field.offset)? & field.mask;
+    Ok(value != 0)
+  }
+
   fn write_type<T>(&self, address: usize, value: &mut T) {
     let _ = write::<T>(&self.module.process_handle, address, value);
+  }
+
+  fn write_bit_field(&self, base: usize, field: &BitField, enable: bool) {
+    let mut value = self.read_type::<u32>(base + field.offset).unwrap();
+
+    if enable {
+      value |= field.mask;
+    }
+    else {
+      value &= !field.mask;
+    }
+
+    self.write_type::<u32>(base + field.offset, &mut value);
   }
 }

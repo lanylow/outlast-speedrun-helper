@@ -40,6 +40,7 @@ fn run() -> Result<(), ()> {
   println!("Use CTRL + F1-F4 to store positions");
   println!("Use F1-F4 to restore positions");
   println!("Use F5 to teleport the character to freecam");
+  println!("Use F6 to toggle god mode");
   println!("Use END to exit");
 
   let mut saved_positions: [Option<Vector>; 4] = [None; 4];
@@ -61,14 +62,12 @@ fn run() -> Result<(), ()> {
       if detect_keydown!(VirtualKeyCode::VK_CONTROL) {
         if let Some(pos) = game_manager.get_location() {
           saved_positions[i] = Some(pos);
-          println!("Position {} saved", i + 1);
           win_beep::beep_with_hz_and_millis(800, 200);
         }
       }
       else {
         if let Some(mut pos) = saved_positions[i as usize] {
           game_manager.set_location(&mut pos);
-          println!("Position {} restored", i + 1);
           win_beep::beep_with_hz_and_millis(500, 200);
         }
       }
@@ -78,6 +77,11 @@ fn run() -> Result<(), ()> {
       if game_manager.teleport_to_debug_cam() {
         win_beep::beep_with_hz_and_millis(200, 200);
       }
+    }
+
+    if detect_keypress(VirtualKeyCode::VK_F6) {
+      let enabled = game_manager.toggle_god_mode();
+      win_beep::beep_with_hz_and_millis(if enabled { 800 } else { 500 }, 200);
     }
 
     thread::sleep(Duration::from_millis(50));
