@@ -29,7 +29,7 @@ fn find_game_process() -> Option<GameManager> {
 fn run() -> Result<(), ()> {
   println!("Outlast Speedrun Helper by lanylow");
 
-  let game_manager = match find_game_process() {
+  let mut game_manager = match find_game_process() {
     Some(v) => v,
     None => {
       println!("ERROR: the game is not running, please open it first");
@@ -37,16 +37,20 @@ fn run() -> Result<(), ()> {
     }
   };
 
-  println!("Use hotkeys CTRL + F1-F4 to store positions");
-  println!("Use hotkeys F1-F4 to restore positions");
-  println!("Use hotkey END to exit");
+  println!("Use CTRL + F1-F4 to store positions");
+  println!("Use F1-F4 to restore positions");
+  println!("Use F5 to teleport the character to freecam");
+  println!("Use END to exit");
 
   let mut saved_positions: [Option<Vector>; 4] = [None; 4];
 
   loop {
-    let hero_pawn = match game_manager.get_hero_pawn() {
-      Ok(x) => x,
-      Err(_) => continue
+    if detect_keypress(VirtualKeyCode::VK_END) {
+      break;
+    }
+
+    if game_manager.update_data().is_err() {
+      continue;
     };
 
     for i in 0usize..4usize {
@@ -55,7 +59,7 @@ fn run() -> Result<(), ()> {
       }
 
       if detect_keydown!(VirtualKeyCode::VK_CONTROL) {
-        if let Some(pos) = game_manager.get_location(hero_pawn) {
+        if let Some(pos) = game_manager.get_location() {
           saved_positions[i] = Some(pos);
           println!("Position {} saved", i + 1);
           win_beep::beep_with_hz_and_millis(800, 200);
@@ -63,15 +67,17 @@ fn run() -> Result<(), ()> {
       }
       else {
         if let Some(mut pos) = saved_positions[i as usize] {
-          game_manager.set_location(hero_pawn, &mut pos);
+          game_manager.set_location(&mut pos);
           println!("Position {} restored", i + 1);
           win_beep::beep_with_hz_and_millis(500, 200);
         }
       }
     }
 
-    if detect_keypress(VirtualKeyCode::VK_END) {
-      break;
+    if detect_keypress(VirtualKeyCode::VK_F5) {
+      if game_manager.teleport_to_debug_cam() {
+        win_beep::beep_with_hz_and_millis(200, 200);
+      }
     }
 
     thread::sleep(Duration::from_millis(50));
